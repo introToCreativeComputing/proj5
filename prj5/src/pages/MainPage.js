@@ -4,7 +4,6 @@ import RippleSketch from '../components/RippleSketch'; // Correct the path to go
 const MainPage = () => {
     return (
         <div>
-            <h1>Main Page</h1>
             <RippleSketch />
         </div>
     );
