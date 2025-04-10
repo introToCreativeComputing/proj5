@@ -1,0 +1,123 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Onboarding Container */
+.onboarding-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #1c1c1c;
+    /* Dark background to make art pop */
+    padding: 20px;
+}
+
+/* Onboarding Content */
+.onboarding-content {
+    max-width: 800px;
+    width: 100%;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* Heading */
+.onboarding-content h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Step Section */
+.step {
+    margin-bottom: 30px;
+}
+
+.step h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.step p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #555;
+}
+
+/* Navigation Buttons */
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    .onboarding-content {
+        padding: 30px;
+    }
+
+    .onboarding-content h1 {
+        font-size: 2rem;
+    }
+
+    .step h2 {
+        font-size: 1.5rem;
+    }
+
+    .step p {
+        font-size: 1rem;
+    }
+
+    button {
+        padding: 12px 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    .onboarding-content {
+        padding: 20px;
+    }
+
+    .onboarding-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .step h2 {
+        font-size: 1.3rem;
+    }
+
+    .step p {
+        font-size: 0.9rem;
+    }
+
+    button {
+        padding: 10px 20px;
+    }
+}
