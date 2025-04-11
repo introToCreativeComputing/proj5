@@ -6,14 +6,13 @@ const RippleSketch = () => {
     const p5Instance = useRef(null); // Store the p5 instance
 
     useEffect(() => {
-        // Define your p5.js sketch
         const sketch = (p) => {
             let ripples = [];
             let rippleInterval = 500;
             let lastRippleTime = 0;
 
             p.setup = () => {
-                p.createCanvas(1920, 1080).parent(canvasRef.current);
+                p.createCanvas(1920, 1080);
                 p.background(0);
             };
 
@@ -127,7 +126,7 @@ const RippleSketch = () => {
         };
 
         // Store the p5 instance so we can access it later for cleanup
-        p5Instance.current = new p5(sketch);
+        p5Instance.current = new p5(sketch, canvasRef.current);
 
         // Cleanup p5.js instance when component unmounts
         return () => {
