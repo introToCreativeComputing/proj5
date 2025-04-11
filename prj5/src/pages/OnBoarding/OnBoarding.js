@@ -1,117 +1,153 @@
-import React, { useState, useEffect } from 'react';
-import p5 from 'p5'; // p5.js for creative interactive art
+import React, { useEffect, useRef } from 'react';
+import p5 from '../../p5Global';
 import './OnBoarding.css';
+
 const OnBoarding = () => {
-    const [step, setStep] = useState(1);
-
-    const nextStep = () => {
-        if (step < 3) setStep(step + 1);
-    };
-
-    const prevStep = () => {
-        if (step > 1) setStep(step - 1);
-    };
+    const sketchRef = useRef(null);
 
     useEffect(() => {
-        // Set up the p5.js sketch
         const sketch = (p) => {
-            let particles = [];
+            // 변수 선언
+            let mic, amplitude;
+            let bgMusic, fftMusic;
+            let dinosaurY;           // 공룡의 y위치
+            let dinosaurVelocity = 0; // 공룡의 점프 속도
+            let groundLevel;         // 땅의 y좌표
+            let isJumping = false;   // 점프 여부
+
+            // 장애물 관련 변수
+            let obstacleX;
+            const obstacleWidth = 50;
+            const obstacleHeight = 50;
+            const obstacleSpeed = 6;
+
+            // 두 사각형이 충돌하는지 체크하는 함수
+            function isColliding(x1, y1, w1, h1, x2, y2, w2, h2) {
+                return (
+                    x1 < x2 + w2 &&
+                    x1 + w1 > x2 &&
+                    y1 < y2 + h2 &&
+                    y1 + h1 > y2
+                );
+            }
+
+            // preload에서 배경음악 로드
+            p.preload = () => {
+                // 'background.mp3' 파일은 public 폴더 내에 있어야 합니다.
+                bgMusic = p.loadSound('background.mp3');
+            };
 
             p.setup = () => {
-                p.createCanvas(window.innerWidth, window.innerHeight);
-                p.background(0);
+                p.createCanvas(p.windowWidth, p.windowHeight);
+                groundLevel = p.height - 100;
+                dinosaurY = groundLevel;
+                obstacleX = p.width; // 장애물 초기 위치
+
+                // 마이크 입력 초기화
+                mic = new p5.AudioIn();
+                mic.start();
+
+                amplitude = new p5.Amplitude();
+                amplitude.setInput(mic);
+
+                // 배경음악의 주파수를 시각화하기 위한 FFT 객체
+                fftMusic = new p5.FFT();
+                fftMusic.setInput(bgMusic);
+
+                bgMusic.loop();
             };
 
             p.draw = () => {
-                p.background(0, 10); // Slight fade for smooth animations
-                particles.push(new Particle(p.mouseX, p.mouseY, p));
-                particles.forEach((particle, index) => {
-                    particle.update();
-                    particle.display();
-                    if (particle.isOffScreen()) {
-                        particles.splice(index, 1);
-                    }
-                });
+                p.background(50);
+
+                // 배경음악의 주파수 데이터를 활용해 '길' 모양 시각화
+                let spectrum = fftMusic.analyze();
+                p.noStroke();
+                p.fill(200, 100, 100);
+                p.beginShape();
+                for (let i = 0; i < spectrum.length; i++) {
+                    const x = p.map(i, 0, spectrum.length, 0, p.width);
+                    const y = p.map(spectrum[i], 0, 255, groundLevel, groundLevel - 150);
+                    p.vertex(x, y);
+                }
+                p.vertex(p.width, p.height);
+                p.vertex(0, p.height);
+                p.endShape(p.CLOSE);
+
+                // 장애물 이동 (오른쪽에서 왼쪽)
+                obstacleX -= obstacleSpeed;
+                if (obstacleX < -obstacleWidth) {
+                    obstacleX = p.width; // 장애물이 화면 밖으로 벗어나면 다시 등장
+                }
+
+                // 장애물 그리기 (빨간 사각형)
+                p.fill(255, 0, 0);
+                p.rect(obstacleX, groundLevel - obstacleHeight, obstacleWidth, obstacleHeight);
+
+                // 마이크의 진폭 값을 분석해 점프 트리거 (임계값 조절 가능)
+                const micLevel = amplitude.getLevel();
+                if (!isJumping && micLevel > 0.05) {
+                    dinosaurVelocity = -15; // 위쪽으로 점프하도록 속도 부여
+                    isJumping = true;
+                }
+
+                // 공룡의 점프와 중력 효과 적용
+                dinosaurY += dinosaurVelocity;
+                dinosaurVelocity += 0.8; // 중력 가속도
+
+                // 땅에 도달하면 단순 착지 처리 (리셋은 하지 않음)
+                if (dinosaurY > groundLevel) {
+                    dinosaurY = groundLevel;
+                    dinosaurVelocity = 0;
+                    isJumping = false;
+                }
+
+                // 공룡 그리기 (녹색 사각형으로 표시)
+                const dinoX = 100;
+                const dinoY = dinosaurY - 50; // 공룡의 y좌표 (사각형의 높이 50 고려)
+                const dinoWidth = 50;
+                const dinoHeight = 50;
+                p.fill(0, 255, 0);
+                p.rect(dinoX, dinoY, dinoWidth, dinoHeight);
+
+                // 장애물과 공룡의 충돌 검사
+                if (
+                    isColliding(
+                        dinoX,
+                        dinoY,
+                        dinoWidth,
+                        dinoHeight,
+                        obstacleX,
+                        groundLevel - obstacleHeight,
+                        obstacleWidth,
+                        obstacleHeight
+                    )
+                ) {
+                    // 충돌 발생 시 게임 상태 리셋 (초기 상태 복원)
+                    dinosaurY = groundLevel;
+                    dinosaurVelocity = 0;
+                    isJumping = false;
+                    obstacleX = p.width;
+                }
             };
 
-            class Particle {
-                constructor(x, y, p) {
-                    this.pos = p.createVector(x, y);
-                    this.vel = p.createVector(p.random(-1, 1), p.random(-1, 1));
-                    this.acc = p.createVector(0, 0);
-                    this.lifespan = 255;
-                }
-
-                update() {
-                    this.vel.add(this.acc);
-                    this.pos.add(this.vel);
-                    this.acc.mult(0);
-
-                    // Add a little force based on mouse position
-                    let mouseForce = p.createVector(p.mouseX, p.mouseY).sub(this.pos).normalize().mult(0.1);
-                    this.acc.add(mouseForce);
-
-                    this.lifespan -= 2;
-                }
-
-                display() {
-                    p.stroke(255, this.lifespan);
-                    p.strokeWeight(2);
-                    p.noFill();
-                    p.ellipse(this.pos.x, this.pos.y, 20, 20);
-                }
-
-                isOffScreen() {
-                    return this.pos.x < 0 || this.pos.x > p.width || this.pos.y < 0 || this.pos.y > p.height;
-                }
-            }
+            p.windowResized = () => {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+                groundLevel = p.height - 100;
+                if (dinosaurY > groundLevel) dinosaurY = groundLevel;
+            };
         };
 
-        // Initialize the p5.js sketch
-        new p5(sketch);
+        const p5Instance = new p5(sketch, sketchRef.current);
 
-        // Cleanup p5.js instance when component unmounts
         return () => {
-            p5.remove();
+            p5Instance.remove();
         };
     }, []);
 
     return (
-        <div className="onboarding-container">
-            <div className="onboarding-content">
-                <h1>Welcome to Our Interactive Art Onboarding!</h1>
-                <p className="description">Let the art respond to your interactions.</p>
-
-                {/* Step 1 */}
-                {step === 1 && (
-                    <div className="step">
-                        <h2>Step 1: Interact with the Art</h2>
-                        <p>Move your mouse to create new particles on the screen.</p>
-                    </div>
-                )}
-
-                {/* Step 2 */}
-                {step === 2 && (
-                    <div className="step">
-                        <h2>Step 2: Click to Create More Effects</h2>
-                        <p>Click on the screen to create additional effects.</p>
-                    </div>
-                )}
-
-                {/* Step 3 */}
-                {step === 3 && (
-                    <div className="step">
-                        <h2>Step 3: Enjoy the Experience</h2>
-                        <p>You are now ready to explore the rest of the application.</p>
-                    </div>
-                )}
-
-                {/* Navigation */}
-                <div className="navigation-buttons">
-                    <button onClick={prevStep} disabled={step === 1}>Previous</button>
-                    <button onClick={nextStep} disabled={step === 3}>Next</button>
-                </div>
-            </div>
+        <div className="onboarding">
+            <div ref={sketchRef} className="p5-container"></div>
         </div>
     );
 };
