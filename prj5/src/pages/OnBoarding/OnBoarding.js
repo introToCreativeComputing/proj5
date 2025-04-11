@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import p5 from '../../p5Global';
+import p5 from 'p5';
+import 'p5.sound';
+import 'p5/lib/addons/p5.sound';
 import './OnBoarding.css';
 
 const OnBoarding = () => {
     const sketchRef = useRef(null);
-
+    const p5Instance = useRef(null);
     useEffect(() => {
         const sketch = (p) => {
             // 변수 선언
